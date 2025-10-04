@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -102,4 +103,23 @@ func HandlerLogin(rw http.ResponseWriter, r *http.Request) {
 		"csrf_token": db.Users[username].CSRFToken,
 	}
 	json.NewEncoder(rw).Encode(response)
+}
+
+func HandlerProtected(rw http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodPost {
+		slog.Error("wrong method")
+		rw.WriteHeader(http.StatusMethodNotAllowed)
+		rw.Write([]byte("wrong method"))
+		return
+	}
+
+	err := utils.Authorize(r)
+	if err != nil {
+		http.Error(rw, "Unathorized", http.StatusUnauthorized)
+		return
+	}
+
+	username := r.FormValue("username")
+	fmt.Fprintf(rw, "username has the csrf token! logged in successfully : %v", username)
 }
