@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"encoding/json"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/saykaw/authenticationv1/db"
 	"github.com/saykaw/authenticationv1/types"
@@ -80,5 +82,24 @@ func HandlerLogin(rw http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	rw.Write([]byte("login is successful!"))
+	sessionToken := utils.GenerateToken(32)
+	csrfToken := utils.GenerateToken(32)
+
+	http.SetCookie(rw, &http.Cookie{
+		Name:     "session_token",
+		Value:    sessionToken,
+		Expires:  time.Now().Add(24 * time.Hour),
+		HttpOnly: true,
+	})
+
+	user := db.Users[username]       // get the existing struct
+	user.SessionToken = sessionToken // update only the token
+	user.CSRFToken = csrfToken       // update only the token
+	db.Users[username] = user        //put the struct back into the map
+
+	response := map[string]string{
+		"message":    "login successful",
+		"csrf_token": db.Users[username].CSRFToken,
+	}
+	json.NewEncoder(rw).Encode(response)
 }
