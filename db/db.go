@@ -1,3 +1,5 @@
 package db
 
-var Users = make(map[string]string)
+import "github.com/saykaw/authenticationv1/types"
+
+var Users = make(map[string]types.Login)
